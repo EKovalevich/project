@@ -37,7 +37,7 @@ class Main
         if (method_exists($this, $method) && $method != __METHOD__) {
             $this->{$method}($params);
         } else {
-            echo json_encode(['error' => "Method $method not exists"]);
+            $this->responseGenerate(false,"Method $method not exists");
         }
     }
 
@@ -107,6 +107,7 @@ class Main
     {
         exec("cd $this->path; git init;", $output);
         echo json_encode($output);
+        $this->responseGenerate(true,'',$output);
     }
 
     private function status()
@@ -115,76 +116,54 @@ class Main
         $this->responseGenerate(true,'',$output);
     }
 
-    private function statusGitResetHead()
+    private function statusGitResetHead($data)
     {
-        $list_files = $_POST['data'];
-        foreach ($list_files as $file) {
+        foreach ($data as $file) {
             exec("cd $this->path;git reset HEAD $file;", $output);
         }
-        echo json_encode(['result' => true, 'data' => $output]);
+        $this->responseGenerate(true,'',$output);
     }
 
-    private function statusGitRmCached()
+    private function statusGitRmCached($data)
     {
-        $list_files = $_POST['data'];
-
-        foreach ($list_files as $file) {
+        foreach ($data as $file) {
             exec("cd $this->path;git rm --cached $file;", $output);
         }
 
-        echo json_encode(['result' => true, 'data' => $output]);
+        $this->responseGenerate(true,'',$output);
     }
 
-    private function statusGitAdd()
+    private function statusGitAdd($data)
     {
-        if (isset($_POST['data'])) {
+        if ($data) {
             $list_files = $_POST['data'];
 
             foreach ($list_files as $file) {
                 exec("cd $this->path;git add $file;", $output, $result);
             }
 
-            echo json_encode(['result' => true]);
+            $this->responseGenerate(true);
         } else {
-            echo json_encode(['result' => false]);
+            $this->responseGenerate(false,'Not data in query');
         }
     }
 
-    private function statusGitRm()
+    private function statusGitRm($data)
     {
-        $list_files = $_POST['data'];
-
-        foreach ($list_files as $file) {
+        foreach ($data as $file) {
             exec("cd $this->path;git rm $file;", $output, $result);
         }
 
-        echo json_encode(['result' => true]);
+        $this->responseGenerate(true);
     }
 
-    private function statusGitCheckout()
+    private function statusGitCheckout($data)
     {
-        $list_files = $_POST['data'];
-
-        foreach ($list_files as $file) {
+        foreach ($data as $file) {
             exec("cd $this->path;git checkout -- $file;", $output);
         }
 
-        echo json_encode(['result' => true]);
-    }
-
-    private function includeStatus()
-    {
-        if (isset($_POST['data'])) {
-            $list_files = $_POST['data'];
-
-            foreach ($list_files as $file) {
-                exec("cd $this->path;git add $file;", $output);
-            }
-            $mess = "cd $this->path;git add $file;";
-            echo json_encode(['result' => true, 'data' => $output, $mess]);
-        } else {
-            echo json_encode(['result' => false]);
-        }
+        $this->responseGenerate(true);
     }
 
     private function addGitignoreStatus()
@@ -195,7 +174,7 @@ class Main
             exec("cd $this->path; echo '$file' >> .gitignore;", $output);
         }
 
-        echo json_encode(['result' => true, 'data' => $output]);
+        $this->responseGenerate(true,'',$output);
     }
 
     private function branch()
@@ -238,11 +217,11 @@ class Main
         echo json_encode($output);
     }
 
-    private function commitMessage()
+    private function commitMessage($data)
     {
-        $message = $_POST['message'];
+        $message = $data['message'];
         exec("cd $this->path; git commit -m '$message';", $output);
-        echo json_encode($output);
+        $this->responseGenerate(true,'',$output);
     }
 
     private function push()

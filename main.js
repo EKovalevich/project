@@ -136,29 +136,31 @@ $(document).ready(function () {
         callbackStatus: function () {
             gitPanel.options.interface.on('click', gitPanel.options.status.buttonsID, function () {
                 var data = {};
-                gitPanel.options.status.result.find('input[data-type="' + $(this).data('type') + '"]:checked').each(function (i, val) {
+                gitPanel.options.status.result.find('input[data-type*="' + $(this).data('type') + '"]:checked').each(function (i, val) {
                     data[i] = $(val).val();
                 });
+                console.log(data);
+                if(Object.keys(data).length != 0) {
+                    data = {
+                        type: $(this).data('method'),
+                        data: data
+                    };
 
-                data = {
-                    type: $(this).data('method'),
-                    data: data
-                };
+                    responce = gitPanel.getData(data)
 
-                responce = gitPanel.getData(data)
-
-                if (responce.result) {
-                    gitPanel.updateStatus();
-                } else {
-                    alert('Error: reload page; ' + responce.message);
+                    if (responce.result) {
+                        gitPanel.updateStatus();
+                    } else {
+                        alert('Error: reload page; ' + responce.message);
+                    }
                 }
             })
         },
 
         updateStatus: function () {
-            html = gitPanel.renderStatus()
-            gitPanel.options.status.result.replaceWith(html)
-            gitPanel.options.status.result=$('#result');
+            html = gitPanel.renderStatus();
+            gitPanel.options.status.result.replaceWith(html);
+            gitPanel.options.status.result = $('#result');
         },
 
         renderCommit: function () {
@@ -166,7 +168,32 @@ $(document).ready(function () {
         },
 
         callbackCommit: function () {
+            console.log(gitPanel.options.commit.button);
 
+            gitPanel.options.commit.button.on('click', function () {
+                data = {
+                    type: $(this).data('method'),
+                    data: {
+                        message:gitPanel.options.commit.textarea.val()
+                    }
+                };
+
+                responce = gitPanel.getData(data);
+
+                if(responce.result){
+
+                    html='';
+
+                    responce.data.forEach(function (value) {
+                        html+='<p>'+'</p>'
+                    });
+
+                    gitPanel.options.commit.result.html(html)
+
+                }else{
+                    alert(responce.message)
+                }
+            })
         },
 
         renderBranch: function () {
@@ -335,7 +362,16 @@ $(document).ready(function () {
                                     },
                                 ]
                             };
+
                             gitPanel.renderPage(parameters);
+                            gitPanel.options = Object.assign(gitPanel.options, {
+                                commit: {
+                                    result: $('#result'),
+                                    button: $('#commitBtn'),
+                                    textarea: $('#commit')
+                                }
+                            });
+                            gitPanel.callbackCommit()
                             break;
                         case 'diff':
                             break;
