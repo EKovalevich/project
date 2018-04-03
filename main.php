@@ -5,8 +5,8 @@ class Main
     private $config;
     private $path;
     private $users;
-    private $passwordGitRemote;
-    private $hrefGitRemote;
+    private $repoPassword;
+    private $repoHref;
 
 
     function __construct()
@@ -28,16 +28,30 @@ class Main
                 if (isset($this->config->users)) {
                     $this->users = array_merge($this->users, $this->config->users);
                 }
+
+                if (isset($this->config->repoPassword)) {
+                    $this->repoPassword = $this->config->repoPassword;
+                }
+
+                if (isset($this->config->repoHref)) {
+                    $this->repoHref = $this->config->repoHref;
+                }
+
+                if(isset($this->config->path)){
+                    $this->path = $this->config->path;
+                }else{
+                    $this->path = $_SERVER['DOCUMENT_ROOT'];
+                }
             }
         }
     }
-
+//https://EKovalevich:(**)github.com/EKovalevich/project.git
     public function exec($method, $params = '')
     {
         if (method_exists($this, $method) && $method != __METHOD__) {
             $this->{$method}($params);
         } else {
-            $this->responseGenerate(false,"Method $method not exists");
+            $this->responseGenerate(false, "Method $method not exists");
         }
     }
 
@@ -63,6 +77,20 @@ class Main
         }
     }
 
+    private function isGitRepo()
+    {
+        if (!empty($this->repoHref) && $this->isLink($this->repoHref) && strpos($this->repoHref, '(*password*)') && !empty($this->repoPassword)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private function isLink()
+    {
+        return true;
+    }
+
     public function existConfig()
     {
         if (file_exists('./config.php')) {
@@ -78,20 +106,20 @@ class Main
 
     private function authorization($data)
     {
-        $data['password']=md5($data['password']);
+        $data['password'] = md5($data['password']);
         session_start();
         if (empty($this->users)) {
             $this->responseGenerate(true);
             return;
         } else {
             foreach ($this->users as $user) {
-                if ($user['password'] == $data['password'] && $user['login']==$data['login']) {
+                if ($user['password'] == $data['password'] && $user['login'] == $data['login']) {
                     $_SESSION['gitPanelHash'] = $data['password'];
                     $this->responseGenerate(true);
                     return;
                 }
             }
-            $this->responseGenerate(false,'Error: user not found');
+            $this->responseGenerate(false, 'Error: user not found');
             return;
         }
     }
@@ -107,13 +135,13 @@ class Main
     {
         exec("cd $this->path; git init;", $output);
         echo json_encode($output);
-        $this->responseGenerate(true,'',$output);
+        $this->responseGenerate(true, '', $output);
     }
 
     private function status()
     {
         exec("cd $this->path; git status;", $output);
-        $this->responseGenerate(true,'',$output);
+        $this->responseGenerate(true, '', $output);
     }
 
     private function statusGitResetHead($data)
@@ -121,7 +149,7 @@ class Main
         foreach ($data as $file) {
             exec("cd $this->path;git reset HEAD $file;", $output);
         }
-        $this->responseGenerate(true,'',$output);
+        $this->responseGenerate(true, '', $output);
     }
 
     private function statusGitRmCached($data)
@@ -130,7 +158,7 @@ class Main
             exec("cd $this->path;git rm --cached $file;", $output);
         }
 
-        $this->responseGenerate(true,'',$output);
+        $this->responseGenerate(true, '', $output);
     }
 
     private function statusGitAdd($data)
@@ -144,7 +172,7 @@ class Main
 
             $this->responseGenerate(true);
         } else {
-            $this->responseGenerate(false,'Not data in query');
+            $this->responseGenerate(false, 'Not data in query');
         }
     }
 
@@ -174,34 +202,34 @@ class Main
             exec("cd $this->path; echo '$file' >> .gitignore;", $output);
         }
 
-        $this->responseGenerate(true,'',$output);
+        $this->responseGenerate(true, '', $output);
     }
 
     private function branch()
     {
         exec("cd $this->path; git branch;", $output);
-        $this->responseGenerate(true,'',$output);
+        $this->responseGenerate(true, '', $output);
     }
 
-    private function createBranch()
+    private function branchCreate($data)
     {
-        $name = $_POST['name'];
+        $name = $data['name'];
         exec("cd $this->path; git branch $name;", $output);
-        echo json_encode($output);
+        $this->responseGenerate(true, '', $output);
     }
 
-    private function deleteBranch()
+    private function branchDelete($data)
     {
-        $name = $_POST['name'];
+        $name = $data['name'];
         exec("cd $this->path; git branch -D $name;", $output);
-        echo json_encode($output);
+        $this->responseGenerate(true, '', $output);
     }
 
-    private function checkoutBranch()
+    private function branchCheckout($data)
     {
-        $name = $_POST['name'];
+        $name = $data['name'];
         exec("cd $this->path; git checkout $name;", $output);
-        echo json_encode($output);
+        $this->responseGenerate(true, '', $output);
     }
 
     private function updateWithMaster()
@@ -221,16 +249,24 @@ class Main
     {
         $message = $data['message'];
         exec("cd $this->path; git commit -m '$message';", $output);
-        $this->responseGenerate(true,'',$output);
+        $this->responseGenerate(true, '', $output);
     }
 
-    private function push()
+    private function push($data)
     {
-        $repo = str_replace('(*password*)', $this->passwordGitRemote, $_POST['repo']);
-        $branch = str_replace([' ', '*'], '', $_POST['branch']);
-        exec("cd $this->path; git push $repo $branch;", $output, $result);
-        $output[] = $result == 0 ? 'Successfully' : 'Error';
-        echo json_encode($output);
+        if ($this->isGitRepo()) {
+            $repo = str_replace('(*password*)', $this->repoHref, $this->repoPassword);
+            $branch = str_replace([' ', '*'], '', $data['name']);
+            exec("cd $this->path; git push $repo $branch;", $output, $result);
+            if($result == 0){
+                $this->responseGenerate(true);
+            }else{
+                $this->responseGenerate(false,'',$output);
+            }
+
+        } else {
+            $this->responseGenerate(false, 'not exist repo', ['callback' => 'gitPanel.renderPopapGitRemote()']);
+        }
     }
 
     private function pull()
@@ -431,24 +467,33 @@ class Main
             if (!$data['notUsers']) {
                 $data['password'] = md5($data['password']);
             }
-            $this->updateConfig($data);
+            $this->configUpdate($data);
             $this->responseGenerate(true);
         } else {
             $this->responseGenerate(false, 'Error: Config file exist');
         }
     }
 
-    private function updateConfig($data)
+    private function configUpdate($data)
     {
         $f = fopen("config.php", "w");
         fwrite($f, "<?\n\$config='" . json_encode($data) . "';\n?>");
         fclose($f);
     }
 
+    private function updateConfigField($data)
+    {
+        $config = json_decode(json_encode($this->config), true);
+
+        $f = fopen("config.php", "w");
+        fwrite($f, "<?\n\$config='" . json_encode(array_merge($config, $data)) . "';\n?>");
+        fclose($f);
+        $this->responseGenerate(true);
+    }
+
     private function responseGenerate($type, $message = '', $data = [])
     {
         echo json_encode(['result' => $type, 'message' => $message, 'data' => $data]);
     }
-
 
 }

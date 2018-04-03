@@ -38,36 +38,75 @@ $(document).ready(function () {
             gitPanel.options = Object.assign(gitPanel.options, {interface: $('#interface')});
         },
 
-        renderPopap: function () {
+        renderPopap: function (form) {
+            html = '<div id="popap" class="popap-background">' +
 
+                '<div class="popap">' +
+                '<div class="popap-content">' +
+                '<p class="title">' + form.title + '</p>' +
+                '<p class="popap-desriptions">' + form.description + '</p>' +
+                form.body +
+                '</div>' +
+                '</div>' +
+                '</div>';
+            $('body').append(html);
+            gitPanel.callbackPopap();
         },
 
-        renderInterface: function (interface) {
-            html = '<div id="interface" class="interface">';
+        callbackPopap: function () {
+            $('#popap').on('click', function () {
+                $(this).remove()
+            }).children().on('click', function (e) {
+                e.stopPropagation()
+            })
+        },
+
+        renderInterface: function (interface, subInterface) {
+            if (!subInterface) {
+                html = '<div id="interface" class="interface">';
+            } else {
+                html = '';
+            }
+
             interface.forEach(function (value, index) {
                 switch (value.type) {
                     case 'button':
                         html += '<button ';
 
-                        if (value.data_type) {
-                            html += 'data-type="' + value.data_type + '"';
-                        }
-
                         if (value.method) {
                             html += 'data-method="' + value.method + '"';
+                        }
+
+                        if (value.data_type) {
+                            html += 'data-type="' + value.data_type + '"';
                         }
 
                         if (value.id) {
                             html += 'id="' + value.id + '"';
                         }
 
+                        if (value.class) {
+                            html += 'class="' + value.class + '"';
+                        }
+
+                        if (value.style) {
+                            html += 'style="' + value.style + '"';
+                        }
+
+                        if (value.placeholder) {
+                            html += 'palceholder="' + value.placeholder + '"';
+                        }
+
+                        if (value.name) {
+                            html += 'name="' + value.name + '"';
+                        }
                         html += '>';
 
                         if (value.name) {
                             html += value.name;
                         }
 
-                        '</button>'
+                        html += '</button>';
                         break;
                     case 'textarea':
                         html += '<textarea ';
@@ -80,16 +119,101 @@ $(document).ready(function () {
                             html += 'id="' + value.id + '"';
                         }
 
-                        html += '>';
+                        if (value.class) {
+                            html += 'class="' + value.class + '"';
+                        }
+
+                        if (value.style) {
+                            html += 'style="' + value.style + '"';
+                        }
+
+                        if (value.placeholder) {
+                            html += 'palceholder="' + value.placeholder + '"';
+                        }
 
                         if (value.name) {
-                            html += value.name;
+                            html += 'name="' + value.name + '"';
                         }
+                        html += '>';
 
                         html += '</textarea>';
                         break;
+                    case 'text':
+                        html += '<input type="text" ';
+
+                        if (value.data_type) {
+                            html += 'data-type="' + value.data_type + '"';
+                        }
+
+                        if (value.id) {
+                            html += 'id="' + value.id + '"';
+                        }
+
+                        if (value.class) {
+                            html += 'class="' + value.class + '"';
+                        }
+
+                        if (value.style) {
+                            html += 'style="' + value.style + '"';
+                        }
+
+                        if (value.placeholder) {
+                            html += 'palceholder="' + value.placeholder + '"';
+                        }
+
+                        if (value.name) {
+                            html += 'name="' + value.name + '"';
+                        }
+
+                        html += ' />';
+                        break;
+                    case 'block':
+                        html += '<div ';
+
+
+                        if (value.method) {
+                            html += 'data-method="' + value.method + '"';
+                        }
+
+                        if (value.data_type) {
+                            html += 'data-type="' + value.data_type + '"';
+                        }
+
+                        if (value.id) {
+                            html += 'id="' + value.id + '"';
+                        }
+
+                        if (value.class) {
+                            html += 'class="' + value.class + '"';
+                        }
+
+                        if (value.style) {
+                            html += 'style="' + value.style + '"';
+                        }
+
+                        if (value.placeholder) {
+                            html += 'palceholder="' + value.placeholder + '"';
+                        }
+
+                        if (value.name) {
+                            html += 'name="' + value.name + '"';
+                        }
+
+                        html += '>';
+
+                        if (value.subInterface) {
+                            html += gitPanel.renderInterface(value.subInterface, true);
+                        }
+
+                        html += '</div>';
+                        break;
                 }
             })
+
+            if (!subInterface) {
+                html += '</div>';
+            }
+
             return html;
         },
 
@@ -140,7 +264,7 @@ $(document).ready(function () {
                     data[i] = $(val).val();
                 });
                 console.log(data);
-                if(Object.keys(data).length != 0) {
+                if (Object.keys(data).length != 0) {
                     data = {
                         type: $(this).data('method'),
                         data: data
@@ -174,36 +298,41 @@ $(document).ready(function () {
                 data = {
                     type: $(this).data('method'),
                     data: {
-                        message:gitPanel.options.commit.textarea.val()
+                        message: gitPanel.options.commit.textarea.val()
                     }
                 };
 
                 responce = gitPanel.getData(data);
 
-                if(responce.result){
+                if (responce.result) {
 
-                    html='';
+                    html = '';
 
                     responce.data.forEach(function (value) {
-                        html+='<p>'+'</p>'
+                        html += '<p>' + value + '</p>'
                     });
 
                     gitPanel.options.commit.result.html(html)
 
-                }else{
+                } else {
                     alert(responce.message)
                 }
             })
         },
 
         renderBranch: function () {
-            data = gitPanel.getData({type: 'branch'})
+            data = gitPanel.getData({type: 'branch'});
             if (data.result) {
-                html = '<div class="result">';
+                html = '<div id="branch" class="result">';
                 $(data.data).each(function (i, val) {
-                    html += '<p>' + val + '</p>'
+                    type = val.replace('*', '');
+                    if (type != val) {
+                        html += '<div class="' + gitPanel.options.branch.resultListClass + ' branch-item active" data-type="' + $.trim(type) + '">* ' + $.trim(type) + '<div class="' + gitPanel.options.branch.optionsClass + ' branch-item-options"></div></div>';
+                    } else {
+                        html += '<div class="' + gitPanel.options.branch.resultListClass + ' branch-item" data-type="' + $.trim(type) + '">' + $.trim(type) + '<div class="' + gitPanel.options.branch.optionsClass + ' branch-item-options"></div></div>';
+                    }
                 });
-                html += '</div>'
+                html += '</div>';
             } else {
                 html = data.message
             }
@@ -212,6 +341,188 @@ $(document).ready(function () {
 
         callbackBranch: function () {
 
+            gitPanel.options.branch.button.on('click', function () {
+                if (text = gitPanel.options.branch.text.val()) {
+                    data = {
+                        type: $(this).data('method'),
+                        data: {
+                            name: text
+                        }
+                    };
+                    responce = gitPanel.getData(data);
+
+                    gitPanel.options.branch.options.hide();
+
+                    if (responce.result) {
+                        gitPanel.updateBranch()
+                        gitPanel.options.branch.result.find('.' + gitPanel.options.branch.resultListClass).removeClass('open');
+                        gitPanel.options.branch.options.hide();
+                    } else {
+                        alert('Error: branch not created; ' + responce.message)
+                    }
+                }
+            });
+
+            gitPanel.options.branch.options.on('click', gitPanel.options.branch.optionsButtonsID, function () {
+                data = {
+                    type: $(this).data('method'),
+                    data: {
+                        name: $('.' + gitPanel.options.branch.resultListClass + '.open').data('type')
+                    }
+                }
+                gitPanel.options.branch.options.hide();
+                responce = gitPanel.getData(data);
+
+                if (responce.result) {
+                    gitPanel.updateBranch()
+                    gitPanel.options.branch.result.find('.' + gitPanel.options.branch.resultListClass).removeClass('open');
+                } else {
+                    if (responce.data.callback) {
+                        eval(responce.data.callback)
+                    } else {
+                        alert('Error: not use event for branch; ' + responce.message)
+                    }
+                }
+
+            });
+
+            gitPanel.options.body.on('click', gitPanel.options.branch.resultID, function (e) {
+                    target = $(e.target);
+
+                    var div = gitPanel.options.branch.result.find('.' + gitPanel.options.branch.resultListClass);
+
+                    if (div.is(e.target) || div.has(e.target).length !== 0) {
+
+                        if (target.hasClass('open') || target.parents('.' + gitPanel.options.branch.resultListClass).hasClass('open')) {
+
+                            if (div.is(e.target)) {
+                                target.removeClass('open');
+                            } else {
+                                target.parents('.' + gitPanel.options.branch.resultListClass).removeClass('open');
+                            }
+
+                            gitPanel.options.branch.options.hide();
+
+                        } else {
+
+                            if (div.is(e.target)) {
+                                options = target.find('.' + gitPanel.options.branch.optionsClass)
+                            } else {
+                                options = target
+                            }
+
+                            positionX = options.offset();
+
+                            position = {
+                                top: positionX.top + options.innerWidth(),
+                                right: positionX.left + options.outerWidth()
+                            };
+
+                            gitPanel.options.branch.options.css({top: position.top, right: (window.innerWidth - position.right)});
+
+                            gitPanel.options.branch.result.find('.' + gitPanel.options.branch.resultListClass).removeClass('open');
+
+                            if (div.is(e.target)) {
+                                target.addClass('open');
+                            } else {
+                                target.parents('.' + gitPanel.options.branch.resultListClass).addClass('open');
+                            }
+
+                            if (target.hasClass('active') || target.parents('.' + gitPanel.options.branch.resultListClass).hasClass('active')) {
+                                gitPanel.options.branch.options.addClass('branch-active');
+                            } else {
+                                gitPanel.options.branch.options.removeClass('branch-active');
+                            }
+
+                            gitPanel.options.branch.options.show();
+                        }
+                    }
+                }
+            );
+
+            gitPanel.options.body.on('dblclick', gitPanel.options.branch.resultID, function (e) {
+                console.log(e.target)
+                if ($(e.target).hasClass(gitPanel.options.branch.resultListClass)) {
+
+                }
+            });
+
+
+            $(document).mouseup(function (e) {
+                var div = gitPanel.options.branch.result.find('.' + gitPanel.options.branch.resultListClass);
+                var div2 = gitPanel.options.branch.options;
+                if (!div.is(e.target)
+                    && div.has(e.target).length === 0 && !div2.is(e.target)
+                    && div2.has(e.target).length === 0) {
+                    gitPanel.options.branch.result.find('.' + gitPanel.options.branch.resultListClass).removeClass('open');
+                    gitPanel.options.branch.options.hide();
+                }
+            });
+
+
+        },
+
+        updateBranch: function () {
+            html = gitPanel.renderBranch();
+            gitPanel.options.branch.result.replaceWith(html);
+            gitPanel.options.branch.result = $('#branch');
+        },
+
+        renderPopapGitRemote: function () {
+            form = {
+                'title': 'Added u git repository',
+                'description': '',
+                'body': '<form id="gitRepo">' +
+                '<p >Use mask <label for="gitPassword">(*password*)</label> for inplement password in repository <label for="gitRepo">href</label></p>' +
+                '<div class="input-group">' +
+                '<input id="gitHref" type="text" name="href" class="form-control" placeholder="git repository href" aria-describedby="basic-addon1" autocomplete="off">' +
+                '</div>' +
+                '<div class="input-group">' +
+                '<input id="gitPassword" type="password" name="password" class="form-control" placeholder="git repository password" aria-describedby="basic-addon1" autocomplete="off">' +
+                '</div>' +
+                '<button id="popapSubmit" type="button" class="btn btn-primary">Update config</button>' +
+                '</form>'
+                ,
+            }
+            gitPanel.renderPopap(form);
+            gitPanel.options.popap = {
+                'form': $('#gitRepo'),
+                'submit': $('#popapSubmit'),
+                'href': $('#gitHref'),
+                'password': $('#gitPassword'),
+            }
+
+            gitPanel.callbackPopapGitRemote();
+        },
+
+        callbackPopapGitRemote: function () {
+            gitPanel.options.popap.submit.on('click', function (e) {
+                e.preventDefault();
+                if (gitPanel.options.popap.href.val() && gitPanel.options.popap.password.val()) {
+                    data = {
+                        'type': 'updateConfigField',
+                        'data': {
+                            'repoHref': gitPanel.options.popap.href.val(),
+                            'repoPassword': gitPanel.options.popap.password.val()
+                        }
+
+                    }
+                    responce = gitPanel.getData(data);
+                    if (responce.result) {
+                        gitPanel.options.popap.form.html('Success');
+                    } else {
+                        alert('Error: not update; '+responce.message)
+                    }
+                } else {
+                    if (!gitPanel.options.popap.href.val()) {
+                        gitPanel.options.popap.href.css({'border-color': '#F00'}).animate({'border-color': '#000'}, 3000);
+                    }
+
+                    if (!gitPanel.options.popap.password.val()) {
+                        gitPanel.options.popap.password.css({'border-color': '#F00'}).animate({'border-color': '#000'}, 3000);
+                    }
+                }
+            })
         },
 
         getData: function (data) {
@@ -334,15 +645,93 @@ $(document).ready(function () {
                                     buttonsID: '#statusBtn'
                                 }
                             });
-                            gitPanel.callbackStatus(parameters.interface);
+                            gitPanel.callbackStatus();
                             break;
                         case 'branch':
+                            gitPanel.options = Object.assign(gitPanel.options, {
+                                branch: {
+                                    resultListClass: 'js-branch-item',
+                                    optionsClass: 'js-branch-item-options',
+                                }
+                            });
                             html = gitPanel.renderBranch();
                             parameters = {
                                 title: 'Branch',
                                 html: html,
+                                interface: [
+                                    {
+                                        type: 'text',
+                                        name: 'branchName',
+                                        placeholder: 'Name',
+                                        id: 'branchName'
+                                    },
+                                    {
+                                        type: 'button',
+                                        data_type: 'reset',
+                                        method: 'branchCreate',
+                                        name: 'Create branch',
+                                        id: 'createBranch'
+                                    }, {
+                                        type: 'block',
+                                        name: 'options',
+                                        id: 'branchOptions',
+                                        class: 'branchOptions',
+                                        style: 'position:absolute; display:none;',
+                                        optionsClass: 'js-branch-item-options',
+                                        subInterface: [
+                                            {
+                                                type: 'button',
+                                                method: 'branchDelete',
+                                                class: 'not-active',
+                                                name: 'Deleted branch',
+                                                id: 'optionsBranchButton'
+                                            },
+                                            {
+                                                type: 'button',
+                                                method: 'branchCheckout',
+                                                class: 'not-active',
+                                                name: 'Checkout branch',
+                                                id: 'optionsBranchButton'
+                                            },
+                                            {
+                                                type: 'button',
+                                                method: 'push',
+                                                name: 'Push branch',
+                                                id: 'optionsBranchButton'
+                                            },
+                                            {
+                                                type: 'button',
+                                                method: 'pull',
+                                                class: 'onli-active',
+                                                name: 'Pull branch',
+                                                id: 'optionsBranchButton'
+                                            },
+                                            {
+                                                type: 'button',
+                                                method: 'pullFromMaster',
+                                                class: 'onli-active',
+                                                name: 'Pull from master',
+                                                id: 'optionsBranchButton'
+                                            },
+
+                                        ]
+                                    }
+                                ]
                             };
                             gitPanel.renderPage(parameters);
+                            gitPanel.options = Object.assign(gitPanel.options, {
+                                branch: {
+                                    result: $('#branch'),
+                                    resultID: '#branch',
+                                    resultListClass: 'js-branch-item',
+                                    button: $('#createBranch'),
+                                    text: $('#branchName'),
+                                    options: $('#branchOptions'),
+                                    optionsButtonsID: '#optionsBranchButton',
+                                    optionsClass: 'js-branch-item-options',
+                                }
+                            });
+                            gitPanel.callbackBranch();
                             break;
                         case 'commit':
                             html = gitPanel.renderCommit();
@@ -431,17 +820,17 @@ $(document).ready(function () {
                         login: login,
                         password: password
                     }
-                }
+                };
                 console.log(data);
                 responce = gitPanel.getData(data);
-                console.log(responce);
+
                 if (responce.result) {
                     gitPanel.renderApplication()
                 } else {
-                    if (gitPanel.options.configuration.form.find("label.error").length) {
-                        gitPanel.options.configuration.form.find("label.error").html(responce.message);
+                    if (gitPanel.options.loginForm.find("label.error").length) {
+                        gitPanel.options.loginForm.find("label.error").html(responce.message);
                     } else {
-                        gitPanel.options.configuration.form.append('<label class="error">' + responce.message + '</label>');
+                        gitPanel.options.loginForm.append('<label class="error">' + responce.message + '</label>');
                     }
                 }
             })
@@ -559,3 +948,4 @@ $(document).ready(function () {
     }
 
 });
+
